@@ -1,0 +1,37 @@
+{
+	"name": "timecrunchy",
+	"version": "1.0.0",
+	"description": "Time-crunched training zones and plans, and every ride as a .zwo workout for smart trainers",
+	"license": "MIT",
+	"author": "pilippopilippo",
+	"homepage": "https://pilippopilippo.github.io/timecrunchy/",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/pilippopilippo/timecrunchy.git"
+	},
+	"type": "module",
+	"exports": {
+		".": "./src/index.js",
+		"./calculator": "./src/calculator.js",
+		"./zone-calculator.css": "./src/zone-calculator.css"
+	},
+	"files": [
+		"src",
+		"scripts",
+		"site",
+		"LICENSE",
+		"README.md"
+	],
+	"engines": {
+		"node": ">=22.12.0"
+	},
+	"scripts": {
+		"build": "node scripts/build.mjs",
+		"test": "npm run build && node --test \"test/*.test.js\"",
+		"start": "npm run build && node scripts/serve.mjs"
+	},
+	"devDependencies": {
+		"esbuild": "0.28.2",
+		"jsdom": "31.0.0"
+	}
+}

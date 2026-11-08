@@ -1,0 +1,39 @@
+/* Standalone page of timecrunchy. Same theme variables as cknlgs.cc, which zone-calculator.css uses. */
+:root {
+	--accent: #b84a12;
+	--accent-text: #8b380e;
+	--on-accent: #fff;
+	--black: 22, 22, 22;
+	--gray: 82, 82, 79;
+	--gray-light: 236, 236, 234;
+	--bg: #fff;
+	--hover-surface: #f3f3f1;
+	color-scheme: light dark;
+}
+@media (prefers-color-scheme: dark) {
+	:root {
+		--accent: #f08a4b;
+		--accent-text: #f2965e;
+		--on-accent: #161616;
+		--black: 245, 245, 243;
+		--gray: 173, 173, 171;
+		--gray-light: 48, 48, 46;
+		--bg: #161616;
+		--hover-surface: #222221;
+	}
+}
+html { background: var(--bg); color: rgb(var(--black)); }
+body {
+	margin: 0;
+	font: 1.0625rem/1.6 system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+	padding: env(safe-area-inset-top, 0) 0 env(safe-area-inset-bottom, 0);
+}
+main { max-width: 46rem; margin: 0 auto; padding: 2rem 1.25rem 3rem; }
+h1 { margin: 0 0 0.25rem; font-size: 2rem; line-height: 1.2; }
+h2 { margin: 2.5rem 0 0.5rem; font-size: 1.25rem; }
+p { margin: 0 0 1rem; }
+a { color: var(--accent-text); }
+code { font: 0.9em ui-monospace, SFMono-Regular, Menlo, monospace; overflow-wrap: anywhere; }
+.lead { color: rgb(var(--gray)); }
+.zc-zwo { margin-left: 0.25em; font-size: 0.85em; white-space: nowrap; }
+footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid rgb(var(--gray-light)); color: rgb(var(--gray)); font-size: 0.9rem; }

@@ -1,0 +1,365 @@
+/* Training zone calculator (zone-calculator.js). Colors come from the site theme (global.css). */
+zone-calculator {
+	display: block;
+	margin-bottom: 2em;
+	/* Error text: at least 7:1 on the page background (WCAG AAA) */
+	--zc-error: #a3161b;
+}
+:root[data-theme="dark"] zone-calculator {
+	--zc-error: #ff9e9e;
+}
+@media (prefers-color-scheme: dark) {
+	:root:not([data-theme]) zone-calculator {
+		--zc-error: #ff9e9e;
+	}
+}
+.zc {
+	display: grid;
+	/* One column as wide as the box: without this, the fields' natural width (wider than a 320px
+	   phone) would stretch the column and the page would scroll sideways */
+	grid-template-columns: minmax(0, 1fr);
+	gap: 1.5rem;
+	padding: 1.25rem;
+	font-size: 0.9em;
+	line-height: 1.5;
+	border: 1px solid rgb(var(--gray-light));
+	border-radius: 12px;
+}
+/* Paragraphs in posts have a large bottom margin: not inside the calculator */
+.prose .zc p,
+.zc p {
+	margin: 0;
+}
+.zc label,
+.zc legend {
+	font-weight: 700;
+	color: rgb(var(--black));
+}
+
+/* Power fields */
+.zc-inputs {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+	gap: 1rem;
+}
+.zc-field {
+	display: grid;
+	gap: 0.35rem;
+	align-content: start;
+}
+.zc-input {
+	position: relative;
+	display: block;
+}
+.zc-input span {
+	position: absolute;
+	top: 50%;
+	right: 0.85rem;
+	transform: translateY(-50%);
+	color: rgb(var(--gray));
+	pointer-events: none;
+}
+.zc input,
+.zc select {
+	box-sizing: border-box;
+	width: 100%;
+	/* At least 44px tall: an easy target on touch screens (WCAG 2.5.5, AAA) */
+	min-height: 44px;
+	padding: 0.5rem 0.85rem;
+	/* 16px or more: phones don't zoom in when the field is selected */
+	font: inherit;
+	font-size: max(16px, 1em);
+	color: rgb(var(--black));
+	background: var(--bg);
+	/* Field borders: at least 3:1 on the background (WCAG 1.4.11) */
+	border: 1px solid rgb(var(--gray));
+	border-radius: 8px;
+}
+.zc-input input {
+	/* Room for the unit (W, bpm) */
+	padding-right: 3.5rem;
+}
+.zc input[aria-invalid] {
+	border: 2px solid var(--zc-error);
+}
+.zc-error {
+	color: var(--zc-error);
+	font-weight: 700;
+}
+.zc-error::before {
+	content: "⚠ ";
+}
+.zc-hint {
+	grid-column: 1 / -1;
+	color: rgb(var(--gray));
+}
+.zc-base {
+	font-weight: 700;
+	color: rgb(var(--black));
+}
+
+/* Zones */
+.prose .zc-zones,
+.zc-zones {
+	width: 100%;
+	border-collapse: collapse;
+	font-variant-numeric: tabular-nums;
+}
+.zc-zones caption {
+	margin-bottom: 0.5rem;
+	font-weight: 700;
+	text-align: left;
+	color: rgb(var(--black));
+}
+.zc-zones th,
+.zc-zones td {
+	padding: 0.5rem 0.5rem 0.5rem 0;
+	text-align: left;
+	vertical-align: top;
+	border-bottom: 1px solid rgb(var(--gray-light));
+}
+.zc-zones thead th {
+	font-size: 0.85em;
+	color: rgb(var(--gray));
+}
+.zc-zones td {
+	white-space: nowrap;
+}
+.zc-zones td:last-child {
+	padding-right: 0;
+}
+.zc-zone-value {
+	display: block;
+	font-weight: 700;
+	color: rgb(var(--black));
+}
+.zc-zone-share {
+	display: block;
+	font-size: 0.85em;
+	color: rgb(var(--gray));
+}
+.zc-zone-name {
+	display: block;
+	font-weight: 400;
+	color: rgb(var(--black));
+}
+.zc-zone-id {
+	margin-right: 0.3em;
+}
+.zc-zone-description {
+	display: block;
+	font-weight: 400;
+	font-size: 0.85em;
+	color: rgb(var(--gray));
+}
+
+/* Plan */
+.zc-plan {
+	display: grid;
+	gap: 1rem;
+}
+.zc-weeks {
+	margin: 0;
+	padding: 0;
+	border: 0;
+}
+.zc-weeks legend {
+	margin-bottom: 0.35rem;
+	padding: 0;
+}
+.zc-chips {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem;
+}
+.zc-chip {
+	position: relative;
+}
+.zc-chip input {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	min-height: 0;
+	margin: 0;
+	opacity: 0;
+	cursor: pointer;
+}
+.zc-chip span {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	box-sizing: border-box;
+	min-width: 44px;
+	min-height: 44px;
+	padding: 0 0.8rem;
+	font-weight: 700;
+	font-variant-numeric: tabular-nums;
+	color: rgb(var(--black));
+	border: 1px solid rgb(var(--gray));
+	border-radius: 999px;
+	transition: background-color 0.15s ease;
+}
+.zc-chip:hover span {
+	background: var(--hover-surface);
+}
+.zc-chip input:checked + span {
+	color: var(--on-accent);
+	background: var(--accent-text);
+	border-color: var(--accent-text);
+}
+.zc-chip input:focus-visible + span {
+	outline: 2px solid var(--accent-text);
+	outline-offset: 2px;
+}
+.prose .zc-days,
+.zc-days {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+.zc-days li {
+	display: grid;
+	grid-template-columns: 7rem 1fr;
+	gap: 0.25rem 1rem;
+	margin: 0;
+	padding: 0.6rem 0;
+	border-top: 1px solid rgb(var(--gray-light));
+}
+.zc-day {
+	font-weight: 700;
+	color: rgb(var(--black));
+}
+.zc-ride {
+	display: block;
+}
+.zc-ride + .zc-ride {
+	margin-top: 0.25rem;
+}
+.zc-rest span:last-child {
+	color: rgb(var(--gray));
+}
+@media (max-width: 30rem) {
+	.zc {
+		padding: 1rem;
+	}
+	.zc-days li {
+		grid-template-columns: 1fr;
+	}
+}
+/* Very narrow phones (320px): the zone values may wrap, or the table would be wider than the screen */
+@media (max-width: 22.5rem) {
+	.zc-zones td {
+		white-space: normal;
+	}
+}
+
+/* Print or save as PDF */
+.zc-print {
+	justify-self: start;
+	/* At least 44px tall: an easy target on touch screens (WCAG 2.5.5, AAA) */
+	min-height: 44px;
+	padding: 0.5rem 1.1rem;
+	font: inherit;
+	font-weight: 700;
+	color: rgb(var(--black));
+	background: var(--bg);
+	border: 1px solid rgb(var(--gray));
+	border-radius: 999px;
+	cursor: pointer;
+	transition: background-color 0.15s ease;
+}
+.zc-print:hover {
+	background: var(--hover-surface);
+}
+.zc-print::before {
+	content: "⎙ ";
+}
+.zc-print-root {
+	display: none;
+}
+@media print {
+	.zc-print {
+		display: none;
+	}
+	/* While printing the plan, it's the only thing on the page */
+	html.zc-printing body > :not(.zc-print-root) {
+		display: none !important;
+	}
+	html.zc-printing .zc-print-root {
+		display: block;
+		font-size: 10.5pt;
+		line-height: 1.4;
+		color: #000;
+		background: #fff;
+	}
+	.zc-print-root h1 {
+		margin: 0 0 4pt;
+		font-size: 18pt;
+		color: #000;
+	}
+	.zc-print-root h2 {
+		margin: 12pt 0 4pt;
+		font-size: 12pt;
+		color: #000;
+		break-after: avoid;
+	}
+	.zc-print-root p {
+		margin: 0 0 8pt;
+	}
+	.zc-print-root table {
+		width: 100%;
+		border-collapse: collapse;
+	}
+	.zc-print-root th,
+	.zc-print-root td {
+		padding: 3pt 8pt 3pt 0;
+		text-align: left;
+		vertical-align: top;
+		border-bottom: 0.5pt solid #999;
+	}
+	.zc-print-root tbody th {
+		width: 9em;
+	}
+	.zc-print-root .zc-print-zones {
+		width: auto;
+	}
+	.zc-print-root .zc-print-zones th {
+		width: auto;
+		padding-right: 16pt;
+		white-space: nowrap;
+	}
+	.zc-print-week {
+		break-inside: avoid;
+	}
+	.zc-print-root .zc-rest td {
+		color: #444;
+	}
+	.zc-print-legend dl {
+		margin: 0;
+		columns: 2;
+		column-gap: 16pt;
+	}
+	.zc-print-legend dl div {
+		margin-bottom: 4pt;
+		break-inside: avoid;
+	}
+	.zc-print-legend dt {
+		font-weight: 700;
+	}
+	.zc-print-legend dd {
+		margin: 0;
+	}
+	.zc-print-source {
+		margin-top: 12pt;
+		font-size: 9pt;
+		color: #444;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.zc-print,
+	.zc-chip span {
+		transition: none;
+	}
+}

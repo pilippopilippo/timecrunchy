@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+	<title>timecrunchy · Time-crunched training zones and plans</title>
+	<meta name="description" content="Power and heart rate zones from your ramp test FTP or threshold heart rate, week-by-week plans, and every workout as a .zwo file for your smart trainer.">
+	<link rel="stylesheet" href="site.css">
+	<link rel="stylesheet" href="zone-calculator.css">
+	<!-- Classic script on purpose: the element is ready before the browser reaches it -->
+	<script src="zone-calculator.js"></script>
+</head>
+<body>
+<main>
+	<h1>timecrunchy</h1>
+	<p class="lead">Training zones from your ramp test FTP or threshold heart rate, and week-by-week plans for racing, Gran Fondos, commuting and more. Every ride for the trainer is also a .zwo file you can load into a trainer app.</p>
+
+	<zone-calculator data-downloads="v1/"></zone-calculator>
+
+	<h2>Workouts for apps</h2>
+	<p>The .zwo files set ERG targets in the middle of each zone (EM 65%, SS 98%, CR 108% of FTP) and 120% FTP for PowerIntervals; Peak-and-Fade PowerIntervals use a 6% slope instead, because they start all out and fade. Group rides, commutes, races and cyclocross practice are outdoors and have no file.</p>
+	<p>Everything is also available as JSON: <a href="v1/plans.json"><code>v1/plans.json</code></a> lists the plans, <code>v1/plans/&lt;id&gt;.json</code> has every ride of a plan, <a href="v1/zones.json"><code>v1/zones.json</code></a> the zones. The <a href="timecrunchy.js"><code>timecrunchy.js</code></a> module has the same functions.</p>
+
+	<footer>
+		<p>Zones and plans from <i>The Time-Crunched Cyclist</i> by Chris Carmichael (3rd edition), adapted to a ramp test FTP and threshold heart rate by pilippopilippo. More in the post <a href="https://cknlgs.cc/blog/time-crunched-training/">Time-crunched training</a>.</p>
+		<p><a href="https://github.com/pilippopilippo/timecrunchy">Source on GitHub</a> · MIT License · <span id="version"></span></p>
+	</footer>
+</main>
+</body>
+</html>
