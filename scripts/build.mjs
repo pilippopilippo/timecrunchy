@@ -23,7 +23,7 @@ await writeFile(join(out, 'index.html'), page.replace('<span id="version"></span
 
 // API
 const lib = await import(join(root, 'src/index.js'));
-const { ZONES, FTP_SHARE, THRESHOLD_HEART_SHARE, powerShare, heartShare, buildLibrary, ERG, CADENCE, PFPI_SLOPE } = lib;
+const { ZONES, FTP_SHARE, THRESHOLD_HEART_SHARE, powerShare, heartShare, buildLibrary, ERG, ERG_RANGE, CADENCE, PFPI_SLOPE } = lib;
 const json = (value) => `${JSON.stringify(value, null, '\t')}\n`;
 const meta = { version: pkg.version, api: 'v1', source: pkg.homepage };
 await writeFile(
@@ -35,6 +35,7 @@ await writeFile(
 		ftpShare: FTP_SHARE,
 		thresholdHeartShare: THRESHOLD_HEART_SHARE,
 		erg: ERG,
+		ergRange: ERG_RANGE,
 		cadence: CADENCE,
 		pfpiSlope: PFPI_SLOPE,
 	}),

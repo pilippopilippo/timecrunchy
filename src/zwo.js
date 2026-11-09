@@ -3,16 +3,29 @@
 // Rules, so that the result is predictable:
 // - EM time is the length of the whole ride, the intervals are inside it: 10 min. warm-up, the intervals in order,
 //   EM up to the length, 5 min. cool-down. With a range of minutes, the shortest that fits the intervals.
-// - ERG targets are the middle of each zone (ERG below); PowerIntervals have no upper limit: 120% FTP.
+// - ERG targets are the middle of each zone (ERG below); PowerIntervals have no upper limit: 120% FTP. Each
+//   interval also carries its zone as PowerRangeLow/PowerRangeHigh (ERG_RANGE), for apps that hold it inside the range.
 // - Peak-and-Fade PowerIntervals start all out and fade: not something ERG can do, they use a slope instead.
 // - Group rides, commutes, races, cyclocross practice and Gran Fondo days are outdoors: no file. Of two options
 //   (EITHER) the first one without outdoor parts is used.
-import { R, PLANS } from './data.js';
+import { R, PLANS, ZONES } from './data.js';
 import { TEXT } from './text.js';
-import { partsText } from './targets.js';
+import { partsText, powerShare } from './targets.js';
 
 /** ERG targets, share of FTP */
 const ERG = { EM: 0.65, EM_UPPER: 0.8, SS: 0.98, CR: 1.08, PI: 1.2, FP: 0.55, RECOVERY: 0.55, EASY: 0.5, VERY_EASY: 0.45 };
+const round3 = (x) => Math.round(x * 1000) / 1000;
+const zonePower = (id) => ZONES.find((z) => z.id === id).power.map(powerShare);
+/**
+ * ERG ranges, share of FTP: the zone of each interval. ERG holds one power at a time (Power, the middle); an app
+ * that reads PowerRangeLow/PowerRangeHigh may move it inside the range. PowerIntervals have no upper limit: 130%.
+ */
+const ERG_RANGE = {
+	EM: zonePower('EM').map(round3),
+	SS: zonePower('SS').map(round3),
+	CR: zonePower('CR').map(round3),
+	PI: [round3(zonePower('PI')[0]), 1.3],
+};
 /** Target cadences, rpm */
 const CADENCE = { EM: 90, SS: 90, CR: 78, PI: 105, PFPI: 95, FP: 112 };
 /** Slope for Peak-and-Fade PowerIntervals, % */
@@ -66,8 +79,9 @@ function blockSeconds(part) {
 	return sets * one + (sets - 1) * (part.rbs ?? 0) * 60;
 }
 
-const steady = (seconds, power, { cadence, slope, message } = {}) =>
-	`<SteadyState Duration="${Math.round(seconds)}" Power="${power}"${cadence ? ` Cadence="${cadence}"` : ''}${slope !== undefined ? ` Slope="${slope}"` : ''}${
+const rangeAttributes = (range, prefix = '') => (range ? ` ${prefix}PowerRangeLow="${range[0]}" ${prefix}PowerRangeHigh="${range[1]}"` : '');
+const steady = (seconds, power, { cadence, slope, message, range } = {}) =>
+	`<SteadyState Duration="${Math.round(seconds)}" Power="${power}"${rangeAttributes(range)}${cadence ? ` Cadence="${cadence}"` : ''}${slope !== undefined ? ` Slope="${slope}"` : ''}${
 		message ? `><textevent timeoffset="0" message="${xml(message)}"/></SteadyState>` : '/>'
 	}`;
 const ramp = (tag, seconds, from, to) => `<${tag} Duration="${seconds}" PowerLow="${from}" PowerHigh="${to}"/>`;
@@ -77,10 +91,10 @@ function intervalSteps(part) {
 	const unit = part.sec ? 1 : 60;
 	const steps = [];
 	const message = TERMS[part.kind] ? `${part.kind} · ${TERMS[part.kind]}` : undefined;
-	if (part.kind === 'SS_TIME') return [steady(lo(part.min) * 60, ERG.SS, { cadence: CADENCE.SS, message: `SS · ${TERMS.SS}` })];
+	if (part.kind === 'SS_TIME') return [steady(lo(part.min) * 60, ERG.SS, { cadence: CADENCE.SS, range: ERG_RANGE.SS, message: `SS · ${TERMS.SS}` })];
 	if (part.kind === 'PI_EFFORTS') {
 		for (let i = 0; i < lo(part.count); i++) {
-			steps.push(steady(60, ERG.PI, { cadence: CADENCE.PI, message: i === 0 ? `PI · ${TERMS.PI}` : undefined }));
+			steps.push(steady(60, ERG.PI, { cadence: CADENCE.PI, range: ERG_RANGE.PI, message: i === 0 ? `PI · ${TERMS.PI}` : undefined }));
 			if (i < lo(part.count) - 1) steps.push(steady(120, ERG.RECOVERY));
 		}
 		return steps;
@@ -92,11 +106,11 @@ function intervalSteps(part) {
 			const seconds = part.min * unit;
 			switch (part.kind) {
 				case 'SS':
-					steps.push(steady(seconds, ERG.SS, { cadence: CADENCE.SS, message: first ? message : undefined }));
+					steps.push(steady(seconds, ERG.SS, { cadence: CADENCE.SS, range: ERG_RANGE.SS, message: first ? message : undefined }));
 					break;
 				case 'PI':
 				case 'SEPI':
-					steps.push(steady(seconds, ERG.PI, { cadence: CADENCE.PI, message: first ? message ?? `PI · ${TERMS.PI}` : undefined }));
+					steps.push(steady(seconds, ERG.PI, { cadence: CADENCE.PI, range: ERG_RANGE.PI, message: first ? message ?? `PI · ${TERMS.PI}` : undefined }));
 					break;
 				case 'PFPI':
 					steps.push(steady(seconds, ERG.PI, { cadence: CADENCE.PFPI, slope: PFPI_SLOPE, message: first ? message : undefined }));
@@ -109,9 +123,9 @@ function intervalSteps(part) {
 				case 'TL': {
 					const [high, climbing, steadyMin] = part.ladder;
 					steps.push(
-						steady(high * 60, ERG.PI, { cadence: CADENCE.PI, message: first ? message : undefined }),
-						steady(climbing * 60, ERG.CR, { cadence: CADENCE.CR }),
-						steady(steadyMin * 60, ERG.SS, { cadence: CADENCE.SS }),
+						steady(high * 60, ERG.PI, { cadence: CADENCE.PI, range: ERG_RANGE.PI, message: first ? message : undefined }),
+						steady(climbing * 60, ERG.CR, { cadence: CADENCE.CR, range: ERG_RANGE.CR }),
+						steady(steadyMin * 60, ERG.SS, { cadence: CADENCE.SS, range: ERG_RANGE.SS }),
 					);
 					break;
 				}
@@ -119,11 +133,11 @@ function intervalSteps(part) {
 					// IntervalsT: "on" first, then "off", repeated; Under first unless overFirst
 					const [under, over] = part.pattern;
 					const repeat = part.min / (under + over);
-					const on = part.overFirst ? [over, ERG.CR, CADENCE.CR] : [under, ERG.SS, CADENCE.SS];
-					const off = part.overFirst ? [under, ERG.SS, CADENCE.SS] : [over, ERG.CR, CADENCE.CR];
+					const on = part.overFirst ? [over, ERG.CR, CADENCE.CR, ERG_RANGE.CR] : [under, ERG.SS, CADENCE.SS, ERG_RANGE.SS];
+					const off = part.overFirst ? [under, ERG.SS, CADENCE.SS, ERG_RANGE.SS] : [over, ERG.CR, CADENCE.CR, ERG_RANGE.CR];
 					const text = first ? `<textevent timeoffset="0" message="${xml(message)}"/>` : '';
 					steps.push(
-						`<IntervalsT Repeat="${repeat}" OnDuration="${on[0] * 60}" OffDuration="${off[0] * 60}" OnPower="${on[1]}" OffPower="${off[1]}" Cadence="${on[2]}" CadenceResting="${off[2]}"${text ? `>${text}</IntervalsT>` : '/>'}`,
+						`<IntervalsT Repeat="${repeat}" OnDuration="${on[0] * 60}" OffDuration="${off[0] * 60}" OnPower="${on[1]}" OffPower="${off[1]}"${rangeAttributes(on[3], 'On')}${rangeAttributes(off[3], 'Off')} Cadence="${on[2]}" CadenceResting="${off[2]}"${text ? `>${text}</IntervalsT>` : '/>'}`,
 					);
 					break;
 				}
@@ -199,7 +213,7 @@ function rideToZwo(parts, meta = {}) {
 			body.push(steady(upper, ERG.EM_UPPER, { cadence: CADENCE.EM, message: 'EM at its upper end' }));
 			fill -= upper;
 		}
-		if (fill > 0) body.push(steady(fill, ERG.EM, { cadence: CADENCE.EM }));
+		if (fill > 0) body.push(steady(fill, ERG.EM, { cadence: CADENCE.EM, range: ERG_RANGE.EM }));
 		body.push(ramp('Cooldown', COOL_DOWN * 60, 0.6, ERG.VERY_EASY));
 	} else {
 		for (const part of ride) {
@@ -218,7 +232,7 @@ function rideToZwo(parts, meta = {}) {
 	const title = rideTitle(ride, emMinutes);
 	const outdoorSuggested = Boolean(em && (em.group || em.hilly || em.crossBike || em.hours)) || seconds >= 180 * 60;
 	const name = meta.name ? `${meta.name} · ${title}` : title;
-	const description = [meta.description ?? partsText(parts, null, TEXT), 'ERG: middle of each zone, PowerIntervals 120% FTP, Peak-and-Fade on a slope.']
+	const description = [meta.description ?? partsText(parts, null, TEXT), 'ERG: middle of each zone (range in PowerRangeLow/PowerRangeHigh), PowerIntervals 120% FTP, Peak-and-Fade on a slope.']
 		.filter(Boolean)
 		.join(' ');
 	const file = `<workout_file>
@@ -270,4 +284,4 @@ function planRides(plan) {
 /** All plans with their rides */
 const buildLibrary = (plans = PLANS) => plans.map((plan) => ({ id: plan.id, name: plan.name, group: plan.group, labels: plan.labels, rides: planRides(plan) }));
 
-export { ERG, CADENCE, PFPI_SLOPE, dayRides, trainerParts, isTrainerRide, blockSeconds, rideTitle, rideToZwo, rideFile, rideId, planRides, buildLibrary };
+export { ERG, ERG_RANGE, CADENCE, PFPI_SLOPE, dayRides, trainerParts, isTrainerRide, blockSeconds, rideTitle, rideToZwo, rideFile, rideId, planRides, buildLibrary };

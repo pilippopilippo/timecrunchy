@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { JSDOM } from 'jsdom';
-import { PLANS, buildLibrary, rideToZwo, rideFile, isTrainerRide } from '../src/index.js';
+import { PLANS, buildLibrary, rideToZwo, rideFile, isTrainerRide, ERG_RANGE } from '../src/index.js';
 
 const { DOMParser } = new JSDOM('').window;
 const library = buildLibrary();
@@ -61,4 +61,22 @@ test('outdoor rides have no file, the trainer option of a choice is used', () =>
 test('file names', () => {
 	assert.equal(rideFile('3', 5), 'w3-sat.zwo');
 	assert.equal(rideFile('9–11', 0, 'am'), 'w9-11-mon-am.zwo');
+});
+
+test('intervals carry their zone as a range around the ERG target', () => {
+	assert.deepEqual(ERG_RANGE, { EM: [0.5, 0.811], SS: [0.956, 1], CR: [1.056, 1.111], PI: [1.122, 1.3] });
+	const ss = rideToZwo([{ kind: 'EM', min: 60 }, { kind: 'SS', reps: 2, min: 10, rbi: 5 }]).xml;
+	assert.match(ss, /Power="0.98" PowerRangeLow="0.956" PowerRangeHigh="1"/);
+	assert.match(ss, /Power="0.65" PowerRangeLow="0.5" PowerRangeHigh="0.811"/);
+	const ou = rideToZwo([{ kind: 'EM', min: 60 }, { kind: 'OU', reps: 1, min: 9, rbi: 0, pattern: [2, 1] }]).xml;
+	assert.match(ou, /OnPower="0.98" OffPower="1.08" OnPowerRangeLow="0.956" OnPowerRangeHigh="1" OffPowerRangeLow="1.056" OffPowerRangeHigh="1.111"/);
+	// recoveries, warm-up and cool-down stay fixed
+	assert.doesNotMatch(ss, /Power="0.55" PowerRange/);
+	// every range contains its ERG target
+	for (const { ride } of trainer) {
+		for (const m of ride.zwo.matchAll(/ Power="([\d.]+)" PowerRangeLow="([\d.]+)" PowerRangeHigh="([\d.]+)"/g)) {
+			const [, power, low, high] = m.map(Number);
+			assert.ok(low <= power && power <= high, `${ride.id}: ${m[0]}`);
+		}
+	}
 });

@@ -25,6 +25,7 @@ The rules are in `src/zwo.js`:
 
 - The EM time is the length of the whole ride, with the intervals inside it: 10 min warm-up, the intervals, EM up to the length, 5 min cool-down. With a range (60–90 min) the shortest length that fits the intervals.
 - ERG targets in the middle of each zone: EM 65%, SS 98%, CR 108% of FTP; PowerIntervals 120%; recoveries 55%.
+- Each interval also carries its zone as a range, `PowerRangeLow`/`PowerRangeHigh` (`OnPowerRangeLow`… on `IntervalsT`): EM 50–81.1%, SS 95.6–100%, CR 105.6–111.1%, PI 112.2–130% (PowerIntervals have no upper limit). `Power` stays the middle, so apps that don't know the range hold it; an app that does can move the target inside the range. Recoveries, warm-up and cool-down are fixed.
 - Peak-and-Fade PowerIntervals start all out and fade, which ERG can't do: they use a 6% slope.
 - Group rides, commutes, races, cyclocross practice and Gran Fondo days are outdoors: no file. When a day offers two options, the first one without outdoor parts is used. Rides of 3 hours or more, group, hilly and MTB rides are marked `outdoorSuggested`.
 
@@ -34,7 +35,7 @@ Base: `https://pilippopilippo.github.io/timecrunchy/`
 
 | Path | Content |
 | --- | --- |
-| `v1/zones.json` | Zones as shares of FTP and threshold heart rate, ERG targets, cadences |
+| `v1/zones.json` | Zones as shares of FTP and threshold heart rate, ERG targets and ranges, cadences |
 | `v1/plans.json` | The plans: id, name, group, week labels, number of rides |
 | `v1/plans/<id>.json` | Every ride of a plan: id, week, day, text, `trainer`, `minutes`, `title`, `outdoorSuggested`, `url` of the `.zwo` |
 | `v1/zwo/<id>/<file>.zwo` | One workout, e.g. `v1/zwo/new-granfondo/w3-sat.zwo` |
